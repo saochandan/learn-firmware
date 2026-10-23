@@ -1,6 +1,6 @@
 # Learn Firmware
 
-An original firmware-development learning path with **43 lessons in 8 modules**, 3 capstone briefs, 3 articles and 91 interview answers. It progresses from C and hardware fundamentals through bring-up, interfaces, real-time design, fault investigation, reliability and delivery. Existing material is integrated into the new sequence with stable IDs.
+An original firmware-development learning path with **43 lessons in 8 modules**, 8 chapter integrations, 43 exercise solution guides, 3 capstone briefs, 3 articles and 129 lesson interview answers. Each chapter also has a separate interview case. It progresses from C and hardware fundamentals through bring-up, interfaces, real-time design, fault investigation, reliability and delivery. Existing material is integrated into the new sequence with stable IDs.
 
 ## Run locally
 
@@ -29,9 +29,12 @@ The workflow checks content, creates a site-only artifact and deploys with the o
 - `content.js`: original lesson bodies, projects, articles and official references.
 - `lesson-details.js`: detailed explanations, worked cases, distinct F401/H743 procedures and troubleshooting for the original 24 lessons.
 - `course-path.js`: 19 new lessons, revised titles, 8 original modules and the learning order.
+- `chapter-content.js`: 8 integrated chapter case studies, all 43 exercise solutions and advanced interview answers for the newer lessons.
+- `chapter-examples.js`: 8 downloadable reference models/tool-command examples with worked traces.
+- `chapter-ui.js`: chapter walkthrough pages and reference copy/download/print controls.
 - `app.js`: routing, course/question search, board adaptations, progress, notebook/export, timing calculator.
 - `styles.css`: responsive layout, keyboard focus, reduced motion and print styling.
-- `scripts/check.mjs`: content checks, 55 route renders, 86 board procedures, navigation, 91 interview answers, filtering and persistence checks.
+- `scripts/check.mjs`: content checks, 63 content-route renders, 86 board procedures, chapter integration/solution coverage, navigation, 129 lesson interview answers, filtering and persistence checks.
 - `scripts/serve.mjs`: loopback-only development server.
 
 ## Hardware scope
@@ -56,6 +59,23 @@ Use ST AN4989, PM0214, PM0253, AN4839, UM2609 and the exact device reference man
 Lesson IDs and display positions differ deliberately: existing notes/bookmarks remain valid, while previous/next follows the new order. The first lesson is `#lesson/25`; the final case study is `#lesson/24`.
 
 The automated checks use a DOM adapter and do not verify visual layout, real-browser behavior or physical boards. Website checks do not compile C firmware. Update/security/power worksheets teach design contracts and are not production implementations. Projects remain detailed briefs rather than completed flashable projects.
+
+## Work through a chapter
+
+Open the course overview, study its lessons and attempt each exercise before opening its solution. Then follow **Open the chapter implementation and reference code** to integrate the concepts. Chapter pages use routes `#chapter/0` through `#chapter/7`; they do not replace existing lesson IDs or saved notes.
+
+| Chapter case | Reference material |
+| --- | --- |
+| Nonblocking water-level monitor | Portable C policy, hysteresis and stale-data trace |
+| Reset-to-application bring-up | Actual Arm GNU/GDB commands and artifact inspection |
+| Sensor-to-UART pipeline | Bounded C frame encoder and exact byte trace |
+| Deadline under task/interrupt load | FreeRTOS queue/task creation with failure cleanup and overload policy |
+| Trustworthy crash context | Bounded frame decoder with invalid-context rejection |
+| Intermittent missing messages | Single-owner bounded evidence ring and overwrite trace |
+| Failure recovery and supervision | Fresh progress-epoch watchdog policy model |
+| Explainable firmware release | Fakeable synchronous driver and rejection-preserves-state example |
+
+Downloadable C examples are instructional reference components, not standalone board applications. FreeRTOS code requires a supported port/configuration and measured stack budgets. HAL/startup, device transactions, flash programming, security trust roots and physical measurements remain target integration work. Host/static website checks must never be reported as target compilation or hardware validation.
 
 ## Suggested extensions
 

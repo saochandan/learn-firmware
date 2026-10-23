@@ -2,6 +2,6 @@
   "name": "learn-firmware",
   "version": "1.0.0",
   "private": true,
-  "description": "Practical STM32 firmware debugging education",
+  "description": "Practical firmware development lessons, chapter implementations and STM32 labs",
   "scripts": { "test": "node scripts/check.mjs", "start": "node scripts/serve.mjs" }
 }
