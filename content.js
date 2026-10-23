@@ -4,12 +4,23 @@ const modules = [
  'Arm Cortex-M Debug Architecture and Tools',
  'HardFaults, Exceptions and Memory Corruption',
  'Interrupts, Timing and Peripheral Debugging',
- 'Firmware Testing, Regression and Professional Reporting',
- 'FreeRTOS Internals and Real-Time Design'
+ 'Firmware Testing, Regression and Professional Reporting'
+];
+const freertosModules = [
+ 'Task Scheduling and Context Switching',
+ 'Priority, Preemption and Priority Inversion',
+ 'Queues, Semaphores and ISR Safety',
+ 'Memory, Stack and Static Allocation',
+ 'Task Notifications, Timers and Idle Power'
 ];
 const lessons = [];
+const freertosLessons = [];
 function lesson(module,title,concept,example,code,steps,expected,exercise,question,answer,h7='Repeat on your exact H7 part. Record the selected core, clock tree and memory region; do not copy F401 peripheral addresses or clock settings.') {
  lessons.push({id:lessons.length+1,module,title,concept,example,code,steps,expected,exercise,question,answer,h7});
+}
+function rtosLesson(module,title,concept,example,code,steps,expected,exercise,question,answer,h7='Repeat on your exact H7 part. Record the selected core, clock tree and memory region; do not copy F401 peripheral addresses or clock settings.') {
+ freertosLessons.push({id:freertosLessons.length+1,module,title,concept,example,code,steps,expected,exercise,question,answer,h7});
+ freertosLessons[freertosLessons.length-1].position = freertosLessons.length;
 }
 lesson(0,'Debugging as an Engineering Investigation',
  'Debugging connects an observed failure to a mechanism that explains it. A symptom is what happened; a hypothesis predicts why; an experiment distinguishes explanations. A correction is credible only when the original failure disappears and a regression test demonstrates why. Think of a doctor measuring temperature before choosing treatment: changing five settings at once destroys the evidence.',
@@ -233,7 +244,7 @@ lesson(4,'Professional Firmware Debugging Reports',
  'Complete the UART recorder capstone and publish a concise case study with original evidence and a regression matrix.',
  'How would you explain a complex firmware bug in an interview?',
  'Describe the symptom, constraints, competing hypotheses, discriminating experiment, causal mechanism and validated fix. Quantify the outcome and explain an alternative you rejected based on evidence.');
-lesson(5,'FreeRTOS Task Scheduling and Context Switching',
+rtosLesson(0,'FreeRTOS Task Scheduling and Context Switching',
  'FreeRTOS schedules tasks by priority and a ready list, then performs a context switch when the current task blocks, yields or is preempted. A task control block holds the stack pointer, state, priority and event information. The scheduler is not “magic”: it selects the next runnable task using a deterministic policy, then restores the saved context of that task.',
  'A sensor task and a telemetry task are both ready. The sensor task runs first because it has higher priority, but once it blocks waiting for a mailbox it hands control to the telemetry task. A short task that calls vTaskDelay can still yield to a lower-priority task if the system is configured for preemption and the current task has reached a ready state transition.',
  '#include "FreeRTOS.h"\n#include "task.h"\nstatic void vSensorTask(void *pvParameters) {\n    for (;;) {\n        /* Read ADC, publish sample */\n        vTaskDelay(pdMS_TO_TICKS(50));\n    }\n}\nstatic void vTelemetryTask(void *pvParameters) {\n    for (;;) {\n        /* Send queue data */\n        taskYIELD();\n    }\n}\nvoid vAppStart(void) {\n    xTaskCreate(vSensorTask, "SENSOR", 256, NULL, 3, NULL);\n    xTaskCreate(vTelemetryTask, "TEL", 256, NULL, 2, NULL);\n}',
@@ -241,7 +252,7 @@ lesson(5,'FreeRTOS Task Scheduling and Context Switching',
  'The higher-priority task keeps the CPU until it blocks or yields; a ready lower-priority task cannot run while the higher-priority task remains runnable.',
  'Write a tiny trace showing READY, RUNNING, BLOCKED and SUSPENDED transitions for a two-task priority system.','What is the real cost of a context switch?',
  'A context switch costs CPU time and stack movement, but it is often cheaper than blocking or busy-waiting. The real question is whether the system is making forward progress under its timing constraints and whether the saved state and stack remain valid under interrupts and task deletions.');
-lesson(5,'Priority, Preemption and Priority Inversion',
+rtosLesson(1,'Priority, Preemption and Priority Inversion',
  'Priority inversion happens when a low-priority task holds a resource needed by a higher-priority task, while an unrelated medium-priority task keeps preempting the low-priority task. FreeRTOS supports mutexes and priority inheritance to bound this phenomenon. Correct task priorities are a design contract, not a vague preference.',
  'A motor control task holds a mutex while sending a command, while a telemetry task with higher priority waits. A logger task with medium priority keeps preempting, so the motor control task cannot finish, delaying the high-priority work. Priority inheritance or a better decomposition is needed.',
  '#include "FreeRTOS.h"\n#include "semphr.h"\nstatic SemaphoreHandle_t xMotorMutex;\nstatic void vMotorTask(void *pv) {\n    for (;;) {\n        xSemaphoreTake(xMotorMutex, portMAX_DELAY);\n        /* drive output */\n        xSemaphoreGive(xMotorMutex);\n        vTaskDelay(pdMS_TO_TICKS(10));\n    }\n}\nstatic void vLoggerTask(void *pv) {\n    for (;;) {\n        vTaskDelay(pdMS_TO_TICKS(5));\n        /* medium priority work */\n    }\n}',
@@ -249,7 +260,7 @@ lesson(5,'Priority, Preemption and Priority Inversion',
  'Priority inversion causes unbounded or excessive blocking. A mutex plus priority inheritance reduces the worst-case delay by making the lock owner inherit the highest waiting priority.',
  'Design a policy for a shared SPI driver with one low-priority writer and several higher-priority readers. Explain the priority model and the lock duration.','Why is a “high priority task always preempts” assumption dangerous?',
  'It ignores resource ownership, interrupt latency and lock duration. In real systems, the highest-priority task can still be delayed when it waits on a resource held by a lower-priority task, or when a long critical section or ISR blocks progress. Hardware and software design contracts must cover that.' );
-lesson(5,'Queues, Semaphores and ISR Safety',
+rtosLesson(2,'Queues, Semaphores and ISR Safety',
  'FreeRTOS communication primitives are explicit contracts about ownership, waiting, and wakeup. Queues move data between tasks and ISR contexts. Semaphores represent availability or events, while mutexes represent exclusive ownership. The main design question is whether the producer is blocked, the consumer is waiting, or the ISR must complete quickly.',
  'A UART RX ISR writes bytes into a queue. A protocol parser task drains them. An overloaded queue should drop new data, count the loss, and keep the system alive rather than deadlocking or overflowing a static buffer. In ISR code, use xQueueSendFromISR instead of blocking calls.',
  '#include "FreeRTOS.h"\n#include "queue.h"\nstatic QueueHandle_t xRxQueue;\nvoid vUartIsr(void) {\n    uint8_t byte = UART_ReadByte();\n    BaseType_t xHigherPriorityTaskWoken = pdFALSE;\n    xQueueSendFromISR(xRxQueue, &byte, &xHigherPriorityTaskWoken);\n    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);\n}',
@@ -257,7 +268,7 @@ lesson(5,'Queues, Semaphores and ISR Safety',
  'The ISR writes to a queue without blocking, and the consumer task processes the frame as soon as the queue has enough data. If the queue fills, the app counts drops and returns to a safe state.',
  'Create a queue-based design for a sensor acquisition pipeline with three stages: acquisition, validation and logging. Name the boundary of ownership and the queue depth policy.','What is the common bug behind “the queue looked full but the task never woke up”?',
  'The queue full condition, ISR wake-up, and task wait state were not correctly coordinated. The producer may have dropped data, the consumer may not have re-enabled a higher-priority wakeup, or a queue length change may have invalidated the original design assumptions. Verify the actual wake-up path and the data ownership protocol.' );
-lesson(5,'Memory, Stack and Static Allocation in RTOS',
+rtosLesson(3,'Memory, Stack and Static Allocation in RTOS',
  'FreeRTOS task stacks and heap choices directly affect timing, determinism and crash behavior. Static allocation is easier to audit and predict; dynamic allocation with malloc-like behavior can be convenient but adds fragmentation, timing variability and memory exhaustion risk. A task stack overflow may corrupt the TCB or the scheduler state itself.',
  'A network task with a 256-byte stack silently corrupts memory during a large string parse. The fix is to increase stack depth, move parser state to static memory, and validate high-watermark usage under stress. Stack overflow often hides behind an apparently unrelated crash.',
  '#include "FreeRTOS.h"\n#include "task.h"\nstatic StackType_t xTaskStack[512];\nstatic StaticTask_t xTaskBuffer;\nstatic void vParserTask(void *pv) {\n    for (;;) {\n        /* parse packet */\n    }\n}\nvoid vCreateParserTask(void) {\n    xTaskCreateStatic(vParserTask, "PARSER", 512, NULL, 2, xTaskStack, &xTaskBuffer);\n}',
@@ -265,7 +276,7 @@ lesson(5,'Memory, Stack and Static Allocation in RTOS',
  'Static allocation makes object lifetime and stack size explicit. High-water-mark reporting shows whether the chosen stack size is adequate under stress.',
  'Design a safe memory strategy for a device driver that queues packets and logs faults. State which objects are static, which are dynamic and why.','Why is “it only crashes under load” a classic RTOS bug pattern?',
  'It usually means a stack, queue or heap boundary is being exceeded under a specific timing pattern. The bug is latent until allocation, priority inversion, ISR timing or buffer depth pushes the system past the invariant boundary. Treat it as a resource-contract problem, not a random failure.' );
-lesson(5,'Task Notifications, Timers and Low-Power Idle',
+rtosLesson(4,'Task Notifications, Timers and Low-Power Idle',
  'Task notifications and software timers are efficient ways to signal events without creating extra queues or semaphores. Tickless idle reduces power consumption by stopping the periodic tick when all tasks are idle. The corner case is not just “idle is low power”; it is “what happens at the next wake-up event and how do we maintain time correctness?”',
  'A wireless module wakes the system on an external interrupt, sends a packet, and then returns to sleep. The system must reliably distinguish between a stale event and a new edge while keeping RTC/time tracking accurate. A tickless design can optimize power only when all scheduling edges are correctly considered.',
  '#include "FreeRTOS.h"\n#include "task.h"\nstatic void vRadioTask(void *pv) {\n    uint32_t ulEvent;\n    for (;;) {\n        ulEvent = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);\n        if (ulEvent) {\n            /* handle radio packet */\n        }\n    }\n}\nstatic void vWakeFromIsr(void) {\n    BaseType_t xHigherPriorityTaskWoken = pdFALSE;\n    vTaskNotifyGiveFromISR(xTaskGetCurrentTaskHandle(), &xHigherPriorityTaskWoken);\n    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);\n}',
